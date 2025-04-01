@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Formulário de Leads</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    input, textarea, button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h2>Formulário de Captação de Leads</h2>
+  <form id="leadForm">
+    <input type="text" id="nome" placeholder="Nome" required />
+    <input type="email" id="email" placeholder="Email" />
+    <input type="tel" id="telefone" placeholder="Telefone" />
+    <textarea id="observacoes" placeholder="Observações"></textarea>
+    <button type="submit">Salvar Lead</button>
+  </form>
+
+  <button onclick="exportarCSV()">Exportar para CSV</button>
+
+  <table id="leadsTable">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Email</th>
+        <th>Telefone</th>
+        <th>Observações</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('serviceWorker.js')
+        .then(reg => console.log('Service Worker registrado', reg))
+        .catch(err => console.error('Erro no Service Worker', err));
+    }
+
+    const form = document.getElementById("leadForm");
+    const tableBody = document.querySelector("#leadsTable tbody");
+
+    let leads = JSON.parse(localStorage.getItem("leads") || "[]");
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+      leads.forEach(lead => {
+        const row = `<tr><td>${lead.nome}</td><td>${lead.email}</td><td>${lead.telefone}</td><td>${lead.observacoes}</td></tr>`;
+        tableBody.innerHTML += row;
+      });
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const novoLead = {
+        nome: document.getElementById("nome").value,
+        email: document.getElementById("email").value,
+        telefone: document.getElementById("telefone").value,
+        observacoes: document.getElementById("observacoes").value
+      };
+      leads.push(novoLead);
+      localStorage.setItem("leads", JSON.stringify(leads));
+      renderTable();
+      form.reset();
+    });
+
+    function exportarCSV() {
+      let csv = "Nome,Email,Telefone,Observacoes\n";
+      leads.forEach(lead => {
+        csv += `${lead.nome},${lead.email},${lead.telefone},${lead.observacoes}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "leads.csv";
+      link.click();
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
